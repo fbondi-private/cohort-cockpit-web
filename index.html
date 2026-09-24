@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Cohort Cockpit</title>
+<style>
+:root{
+  --ground:#EFF2F5; --surface:#FFFFFF; --surface-2:#F7F9FA;
+  --ink:#111820; --ink-2:#39454F; --muted:#66727E; --faint:#647481;
+  --line:#D9E0E6; --line-soft:#E8EDF1;
+  --accent:#0E5470; --accent-soft:#DCE9EF; --accent-ink:#0E5470;
+  --clay:#B0692A; --clay-soft:#F2E4D5;
+  --pos:#2B6B4C; --pos-soft:#DCEBE2;
+  --neg:#A03528; --neg-soft:#F3DEDA;
+  --warn:#8A6010; --warn-soft:#F2E7CF;
+  --shadow:0 1px 2px rgba(17,24,32,.05), 0 4px 16px rgba(17,24,32,.05);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1218; --surface:#151C23; --surface-2:#1B242C;
+    --ink:#E7ECF1; --ink-2:#C0CAD3; --muted:#8B98A4; --faint:#808B97;
+    --line:#28323C; --line-soft:#202932;
+    --accent:#63AECD; --accent-soft:#17303C; --accent-ink:#8FC8E0;
+    --clay:#D9A164; --clay-soft:#372718;
+    --pos:#6BB98F; --pos-soft:#17301F;
+    --neg:#DE8A7C; --neg-soft:#361C18;
+    --warn:#D4AC5E; --warn-soft:#332912;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1218; --surface:#151C23; --surface-2:#1B242C;
+  --ink:#E7ECF1; --ink-2:#C0CAD3; --muted:#8B98A4; --faint:#808B97;
+  --line:#28323C; --line-soft:#202932;
+  --accent:#63AECD; --accent-soft:#17303C; --accent-ink:#8FC8E0;
+  --clay:#D9A164; --clay-soft:#372718;
+  --pos:#6BB98F; --pos-soft:#17301F;
+  --neg:#DE8A7C; --neg-soft:#361C18;
+  --warn:#D4AC5E; --warn-soft:#332912;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--serif); font-weight:600; text-wrap:balance; margin:0}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.wrap{max-width:1240px; margin:0 auto; padding:0 24px 96px}
+.masthead{border-bottom:1px solid var(--line); background:var(--surface)}
+.masthead .wrap{padding-top:26px; padding-bottom:22px; display:flex; flex-wrap:wrap;
+  gap:20px; align-items:flex-end; justify-content:space-between}
+.brandline{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+h1{font-size:28px; letter-spacing:-.015em}
+.sub{color:var(--muted); font-size:13.5px; max-width:60ch; margin-top:5px}
+.stamp{font-size:11.5px; text-transform:uppercase; letter-spacing:.09em;
+  color:var(--faint); font-weight:600}
+.srcbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.controls{position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--line); box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.controls .wrap{padding-top:11px; padding-bottom:11px; display:flex; gap:22px;
+  align-items:center; flex-wrap:wrap}
+.ctl{display:flex; align-items:center; gap:8px}
+.ctl>label{font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--faint); font-weight:600}
+.seg{display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden}
+.ctl{min-width:0; max-width:100%}
+#yearSeg{max-width:100%; overflow-x:auto}
+.seg button{appearance:none; border:0; background:var(--surface); color:var(--muted);
+  font:inherit; font-size:13px; padding:5px 11px; cursor:pointer;
+  border-right:1px solid var(--line); font-variant-numeric:tabular-nums}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--surface-2); color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:#fff; font-weight:600}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{color:#0D1218}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .seg button[aria-pressed="true"]{color:#0D1218}
+  :root:not([data-theme="light"]) .btn.primary{color:#0D1218}
+}
+.btn{appearance:none; font:inherit; font-size:13px; padding:6px 13px; cursor:pointer;
+  border:1px solid var(--line); border-radius:7px; background:var(--surface);
+  color:var(--ink-2); display:inline-flex; align-items:center; gap:6px}
+.btn:hover{background:var(--surface-2); border-color:var(--accent); color:var(--ink)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+:root[data-theme="dark"] .btn.primary{color:#0D1218}
+.btn:focus-visible,.seg button:focus-visible,input:focus-visible,select:focus-visible,
+[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.spacer{flex:1}
+section{margin-top:44px}
+.shead{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:20px}
+.shead h2{font-size:19px; letter-spacing:-.01em}
+.shead p{margin:0; color:var(--muted); font-size:13px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:20px; box-shadow:var(--shadow)}
+.card h3{font-size:14.5px; margin-bottom:2px}
+.card .hint{color:var(--muted); font-size:12.5px; margin:0 0 16px}
+.grid{display:grid; gap:18px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.kpis{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:0;
+  background:var(--surface); border-top:1px solid var(--line);
+  border-left:1px solid var(--line); border-radius:var(--r); overflow:hidden;
+  box-shadow:var(--shadow)}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--surface); padding:15px 16px 14px; display:flex;
+  flex-direction:column; gap:3px; min-height:104px;
+  border-right:1px solid var(--line); border-bottom:1px solid var(--line)}
+.kpi .k{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--faint); font-weight:700}
+.kpi .v{font-family:var(--mono); font-variant-numeric:tabular-nums;
+  font-size:23px; font-weight:600; letter-spacing:-.02em; line-height:1.2}
+.kpi .d{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px;
+  margin-top:auto; flex-wrap:wrap}
+.pill{display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:650;
+  padding:1.5px 6px; border-radius:4px; font-family:var(--mono);
+  font-variant-numeric:tabular-nums}
+.pill.up{background:var(--pos-soft); color:var(--pos)}
+.pill.down{background:var(--neg-soft); color:var(--neg)}
+.pill.flat{background:var(--surface-2); color:var(--muted)}
+.pill.warn{background:var(--warn-soft); color:var(--warn)}
+.kpi.sev{border-left:3px solid transparent; padding-left:13px}
+.kpi.sev-good{border-left-color:var(--pos)}
+.kpi.sev-warn{border-left-color:var(--warn)}
+.kpi.sev-bad{border-left-color:var(--neg)}
+.chartbox{width:100%; overflow-x:auto}
+#moveChart svg{min-width:820px}
+svg{display:block; max-width:100%; height:auto}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted);
+  margin-top:12px; align-items:center}
+.swatch{width:11px; height:11px; border-radius:2.5px; display:inline-block;
+  margin-right:6px; vertical-align:-1px}
+.tablebox{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r);
+  background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13px}
+th,td{padding:8px 12px; text-align:right; white-space:nowrap;
+  border-bottom:1px solid var(--line-soft)}
+th{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--faint);
+  font-weight:700; background:var(--surface-2); position:sticky; top:0; z-index:1}
+th:first-child,td:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.n{font-family:var(--mono); font-variant-numeric:tabular-nums}
+tr.total td{font-weight:700; background:var(--surface-2); border-top:2px solid var(--line)}
+th.sortable{cursor:pointer; user-select:none}
+th.sortable:hover{color:var(--ink)}
+th.sorted::after{content:" ▾"; color:var(--accent)}
+th.sorted.asc::after{content:" ▴"}
+.heat td.c{color:var(--ink); font-family:var(--mono);
+  font-variant-numeric:tabular-nums; border:1px solid var(--surface);
+  border-radius:0; text-align:center; padding:7px 9px; font-size:12px}
+.heat td.c.empty{background:transparent!important; color:var(--faint)}
+.heat th.rowh{text-align:left; background:var(--surface); position:static;
+  font-family:var(--mono); font-size:12px; color:var(--ink-2); font-weight:600;
+  text-transform:none; letter-spacing:0}
+.heat td.size{font-family:var(--mono); font-size:11.5px; color:var(--muted);
+  text-align:right; padding-right:14px}
+.tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); margin-bottom:0;
+  flex-wrap:wrap}
+.tabs button{appearance:none; border:0; background:none; font:inherit; font-size:13px;
+  padding:9px 14px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent;
+  margin-bottom:-1px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--accent-ink); border-bottom-color:var(--accent);
+  font-weight:650}
+.tabs .count{font-family:var(--mono); font-size:11px; color:var(--faint); margin-left:5px}
+input[type="search"],input[type="date"],select{font:inherit; font-size:13px;
+  padding:6px 10px; border:1px solid var(--line); border-radius:7px;
+  background:var(--surface); color:var(--ink)}
+input[type="search"]{width:230px}
+.note{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--warn);
+  border-radius:var(--r); padding:14px 18px; font-size:13.5px; color:var(--ink-2)}
+.note strong{color:var(--ink)}
+.deflist{display:grid; grid-template-columns:auto 1fr; gap:6px 18px; font-size:13px;
+  align-items:baseline}
+.deflist dt{font-weight:650; color:var(--ink); white-space:nowrap}
+.deflist dd{margin:0; color:var(--muted)}
+@media (max-width:700px){.deflist{grid-template-columns:1fr; gap:2px 0}
+  .deflist dd{margin-bottom:10px}}
+.drop{border:1.5px dashed var(--line); border-radius:var(--r); padding:26px;
+  text-align:center; color:var(--muted); font-size:13.5px; background:var(--surface-2)}
+.drop.over{border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink)}
+.hidden{display:none!important}
+.tl{display:inline-flex; gap:2px; vertical-align:-1px}
+.tl i{width:7px; height:12px; border-radius:1.5px; background:var(--line);
+  display:inline-block}
+.tl i.on{background:var(--accent)}
+.tl i.gap{background:var(--neg); opacity:.55}
+.dup{border:1px solid var(--line); border-radius:var(--r); padding:14px 16px;
+  margin-top:12px; background:var(--surface-2)}
+.dup-head{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+  margin-bottom:10px}
+.dup-why{font-size:12.5px; color:var(--muted)}
+.dup-body{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+@media (max-width:760px){.dup-body{grid-template-columns:1fr}}
+.dup-side{background:var(--surface); border:1px solid var(--line);
+  border-radius:7px; padding:10px 12px; font-size:13.5px; min-width:0}
+.dup-side strong{display:block; overflow-wrap:anywhere}
+.dup-meta{display:flex; gap:8px; align-items:center; margin-top:6px;
+  font-size:12px; color:var(--muted); font-family:var(--mono)}
+.dup-acts{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+.dup-acts .btn{font-size:12.5px; padding:5px 10px}
+select.wbSet{font-size:12px; padding:3px 7px}
+.tn-row{display:grid; grid-template-columns:150px 1fr; gap:6px 16px;
+  margin-top:10px; align-items:baseline}
+@media (max-width:700px){.tn-row{grid-template-columns:1fr; gap:2px}}
+.tn-lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--faint); font-weight:700}
+.tn-val{font-size:13px; color:var(--ink-2)}
+.tn-val code{white-space:normal}
+.chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px}
+.chip{font-size:11.5px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:5px; padding:2px 7px; color:var(--ink-2); display:inline-flex;
+  align-items:center; gap:5px}
+.chip.more{color:var(--faint); font-style:italic}
+.chip em{font-style:normal; font-family:var(--mono); font-size:10.5px}
+.chip em.ok{color:var(--pos)} .chip em.no{color:var(--faint)}
+#wbTable td:first-child, #listTable td:first-child, #topTable td:first-child{
+  white-space:normal; max-width:270px; overflow-wrap:anywhere}
+.status{font-size:12.5px; color:var(--muted); font-family:var(--mono)}
+.status.ok{color:var(--pos)} .status.err{color:var(--neg)}
+code{font-family:var(--mono); font-size:.9em; background:var(--surface-2);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line-soft)}
+.footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line);
+  font-size:12.5px; color:var(--faint)}
+.chips label{font-size:12.5px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:6px; padding:5px 10px; cursor:pointer; display:inline-flex;
+  align-items:center; gap:7px; color:var(--ink-2)}
+.chips label:hover{border-color:var(--accent)}
+.chips label input{margin:0}
+.chips label.on{background:var(--accent-soft); border-color:var(--accent);
+  color:var(--accent-ink); font-weight:600}
+body.deck .masthead, body.deck .controls, body.deck #deckPanel,
+body.deck #importPanel, body.deck .footer, body.deck > .wrap{display:none}
+#deckStage{display:none}
+body.deck #deckStage{display:block; margin:0 auto; padding:18px 24px 60px;
+  overflow-x:auto}
+section.slide{margin:0 auto 18px; background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--r);
+  padding:26px 34px 34px; width:297mm; height:167mm;
+  box-shadow:var(--shadow); position:relative; display:flex;
+  flex-direction:column; overflow:hidden}
+.slide-head{border-bottom:1px solid var(--line); padding-bottom:9px;
+  margin-bottom:14px; display:flex; align-items:baseline; gap:12px; flex:none}
+.slide-head h2{font-size:19px; letter-spacing:-.01em}
+.slide-head p{margin:0; color:var(--muted); font-size:12.5px}
+.slide-body{flex:1; min-height:0; display:flex; flex-direction:column; gap:12px;
+  transform-origin:top left; overflow:hidden}
+.slide-body > .grid{gap:12px}
+.slide .card{border:0; box-shadow:none; padding:0; background:none}
+.slide .tablebox{border:1px solid var(--line-soft)}
+.slide .more-rows td{color:var(--faint); font-style:italic; font-size:12px}
+.slide table{font-size:12px}
+.slide th, .slide td{padding:6px 8px}
+.slide th{white-space:normal; letter-spacing:.04em; vertical-align:bottom}
+.slide #mixBody th, .slide #mixBody td{padding-top:4px; padding-bottom:4px}
+.slide .kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.slide .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.slide .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.slide .deflist{grid-template-columns:auto 1fr; gap:6px 18px}
+.slide .deflist dd{margin-bottom:0}
+.slide .tn-row{grid-template-columns:150px 1fr; gap:6px 16px}
+.slide .dup-body{grid-template-columns:1fr 1fr}
+.slide #wbSummary{margin-bottom:0!important}
+.slide #wbSummary > .card{border:1px solid var(--line-soft); border-left-width:3px;
+  border-radius:var(--r); padding:12px 16px}
+.slide #wbTable td:first-child{white-space:nowrap; max-width:260px; overflow:hidden;
+  text-overflow:ellipsis}
+.deckbar{position:sticky; top:0; z-index:30; background:var(--surface);
+  border-bottom:1px solid var(--line); padding:10px 24px; display:none;
+  gap:10px; align-items:center; flex-wrap:wrap}
+body.deck .deckbar{display:flex}
+.slide-foot{position:absolute; left:40px; right:40px; bottom:14px;
+  display:flex; justify-content:space-between; font-size:10.5px;
+  color:var(--faint); font-family:var(--mono)}
+@media print{
+  @page{size:297mm 167mm; margin:0}
+  html, body{background:#fff; margin:0; padding:0}
+  .deckbar,.masthead,.controls,#deckPanel,#importPanel,.footer{display:none!important}
+  body.deck > .wrap{display:none!important}
+  body.deck #deckStage{padding:0; margin:0; overflow:visible}
+  body.deck section.slide{break-after:page; page-break-after:always;
+    break-inside:avoid; border:0; border-radius:0; box-shadow:none; margin:0}
+  body.deck section.slide:last-child{break-after:auto; page-break-after:auto}
+  body.deck, body.deck *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  :root:root:not(#print){--ground:#FFFFFF; --surface:#FFFFFF; --surface-2:#F7F9FA;
+    --ink:#111820; --ink-2:#39454F; --muted:#66727E; --faint:#647481;
+    --line:#D9E0E6; --line-soft:#E8EDF1; --accent:#0E5470; --accent-soft:#DCE9EF;
+    --accent-ink:#0E5470; --clay:#B0692A; --clay-soft:#F2E4D5; --pos:#2B6B4C;
+    --pos-soft:#DCEBE2; --neg:#A03528; --neg-soft:#F3DEDA; --warn:#8A6010;
+    --warn-soft:#F2E7CF; --shadow:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .kpi .v,.pill{transition:color .15s ease}
+  rect,path,circle{transition:opacity .15s ease}
+}
+body.bloccato > :not(#accesso):not(script){display:none!important}
+body:not(.bloccato) #accesso{display:none}
+#accesso{min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding-block:24px; background:var(--ground)}
+.acc-box{width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r); box-shadow:var(--shadow); padding:28px 28px 24px; margin-inline:16px}
+.acc-box h1{font-size:24px; margin-bottom:4px}
+.acc-sub{color:var(--muted); font-size:13px; margin:0 0 18px}
+.acc-box label{display:block; font-size:12px; color:var(--muted); margin:12px 0 4px}
+.acc-box input{width:100%; font:inherit; font-size:14px; padding:9px 11px;
+  border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--ink)}
+.acc-box .btn{width:100%; justify-content:center; margin-top:18px; padding:9px 13px}
+.acc-link{display:block; background:none; border:0; padding:0; margin-top:14px;
+  color:var(--accent-ink); font:inherit; font-size:12.5px; cursor:pointer; text-decoration:underline}
+#accesso [hidden]{display:none!important}
+.acc-msg{font-size:13px; margin:14px 0 0; min-height:1.2em; color:var(--muted)}
+.acc-msg.err{color:var(--neg)} .acc-msg.ok{color:var(--pos)}
+.acc-foot{margin:20px 0 0; font-size:11.5px; color:var(--faint)}
+.nascosta-accesso{display:none!important}
+.utente{display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12.5px;
+  color:var(--muted); margin-top:6px}
+.utente strong{color:var(--ink-2); font-weight:600}
+.utente .btn{font-size:12px; padding:4px 10px}
+.acc-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 18px; margin-top:12px}
+@media (max-width:760px){.acc-grid{grid-template-columns:minmax(0,1fr)}}
+.acc-grid label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted)}
+.acc-grid input[type=text], .acc-grid input[type=email], .acc-grid input[type=date]{
+  font:inherit; font-size:13.5px; padding:7px 10px; border:1px solid var(--line);
+  border-radius:7px; background:var(--surface); color:var(--ink)}
+.acc-grid fieldset{border:1px solid var(--line-soft); border-radius:7px; padding:8px 12px;
+  margin:0; display:flex; flex-wrap:wrap; gap:6px 16px}
+.acc-grid legend{font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--faint); font-weight:700; padding:0 4px}
+.acc-grid label.acc-chk{flex-direction:row; align-items:center; gap:6px; font-size:13px; color:var(--ink-2)}
+.acc-wide{grid-column:1 / -1}
+.acc-azioni{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.acc-h{text-transform:none; color:var(--faint)}
+#pannelloAccessi td .btn{font-size:12px; padding:3px 9px; margin:2px 0}
+body.deck #pannelloAccessi{display:none}
+</style>
+</head>
+<body class="bloccato">
+<div id="accesso">
+  <div class="acc-box">
+    <h1>Cohort Cockpit</h1>
+    <p class="acc-sub" data-t="sub">Accesso riservato</p>
+    <form id="accForm" autocomplete="on">
+      <label for="accEmail" data-t="email">Email</label>
+      <input id="accEmail" type="email" autocomplete="username" required>
+      <label for="accPw" data-t="password">Password</label>
+      <input id="accPw" type="password" autocomplete="current-password" required>
+      <button class="btn primary" id="accEntra" type="submit" data-t="entra">Accedi</button>
+    </form>
+    <form id="accNuova" hidden>
+      <p class="acc-sub" data-t="nuova_h">Scegli la tua password</p>
+      <label for="accPw1" data-t="nuova">Nuova password (almeno 10 caratteri)</label>
+      <input id="accPw1" type="password" autocomplete="new-password" minlength="10" required>
+      <label for="accPw2" data-t="ripeti">Ripeti la password</label>
+      <input id="accPw2" type="password" autocomplete="new-password" minlength="10" required>
+      <button class="btn primary" type="submit" data-t="salva">Salva e continua</button>
+    </form>
+    <button class="acc-link" id="accDimenticata" type="button" data-t="dimenticata">Password dimenticata?</button>
+    <button class="acc-link" id="accEsci" type="button" hidden data-t="esci">Esci</button>
+    <p class="acc-msg" id="accMsg" role="status" aria-live="polite"></p>
+    <p class="acc-foot" data-t="foot">Accesso personale e registrato. I dati sono riservati.</p>
+  </div>
+</div>
+
+<script src="vendor/supabase-2.117.1.js"></script>
+<script>
+// Cohort Cockpit — accesso alla versione web.
+// La pagina non contiene dati. Dopo l'accesso chiede al database la funzione
+// cockpit_payload, che verifica chi è la persona, se il suo accesso è ancora
+// valido, e restituisce solo ciò che può vedere (per esempio senza i nomi dei
+// clienti). Poi avvia il cruscotto con quei dati.
+(function () {
+  const URL_SB = 'https://hnndwoigwaigqnlrwstv.supabase.co';
+  const KEY = 'sb_publishable_y8IqWK-k0DSL1TT1snGUXw_6wLwC_Cw';     // chiave pubblica: da sola non apre nulla
+
+  const IT = /^it\b/i.test(navigator.language || 'it');
+  const T = IT ? {
+    sub: 'Accesso riservato', email: 'Email', password: 'Password', entra: 'Accedi',
+    nuova_h: 'Scegli la tua password', nuova: 'Nuova password (almeno 10 caratteri)',
+    ripeti: 'Ripeti la password', salva: 'Salva e continua',
+    dimenticata: 'Password dimenticata?', esci: 'Esci',
+    foot: 'Accesso personale e registrato. I dati sono riservati.',
+    verifico: 'Verifico…', carico: 'Carico i dati…',
+    credenziali: 'Email o password non corrette.',
+    corta: 'La password deve avere almeno 10 caratteri.',
+    diverse: 'Le due password non coincidono.',
+    serve_email: 'Scrivi prima il tuo indirizzo email.',
+    inviata: 'Se l\'indirizzo è abilitato, riceverai un\'email per reimpostare la password.',
+    link_scaduto: 'Il link non è più valido. Chiedi un nuovo invito o usa «Password dimenticata».',
+    errore_rete: 'Non riesco a raggiungere il server. Riprova fra poco.',
+    motivo_non_autorizzato: 'Questo account non è abilitato al cruscotto.',
+    motivo_scaduto: 'Il tuo accesso è scaduto. Chiedi a chi te l\'ha dato di rinnovarlo.',
+    motivo_revocato: 'Il tuo accesso è stato revocato.',
+    motivo_nessun_dato: 'I dati non sono ancora disponibili.',
+    motivo_non_autenticato: 'Sessione scaduta: accedi di nuovo.',
+    scade: d => `accesso fino al ${d}`, anonimi: 'clienti in forma anonima',
+  } : {
+    sub: 'Restricted access', email: 'Email', password: 'Password', entra: 'Sign in',
+    nuova_h: 'Choose your password', nuova: 'New password (at least 10 characters)',
+    ripeti: 'Repeat the password', salva: 'Save and continue',
+    dimenticata: 'Forgot your password?', esci: 'Sign out',
+    foot: 'Personal, logged access. The data is confidential.',
+    verifico: 'Checking…', carico: 'Loading the data…',
+    credenziali: 'Wrong email or password.',
+    corta: 'The password needs at least 10 characters.',
+    diverse: 'The two passwords do not match.',
+    serve_email: 'Type your email address first.',
+    inviata: 'If the address is enabled, you will receive an email to reset the password.',
+    link_scaduto: 'The link is no longer valid. Ask for a new invitation or use "Forgot your password".',
+    errore_rete: 'The server cannot be reached. Try again shortly.',
+    motivo_non_autorizzato: 'This account is not enabled for the cockpit.',
+    motivo_scaduto: 'Your access has expired. Ask whoever granted it to renew it.',
+    motivo_revocato: 'Your access has been revoked.',
+    motivo_nessun_dato: 'The data is not available yet.',
+    motivo_non_autenticato: 'Session expired: sign in again.',
+    scade: d => `access until ${d}`, anonimi: 'clients shown anonymously',
+  };
+
+  const $ = id => document.getElementById(id);
+  document.querySelectorAll('#accesso [data-t]').forEach(el => {
+    if (T[el.dataset.t]) el.textContent = T[el.dataset.t];
+  });
+  document.documentElement.lang = IT ? 'it' : 'en';
+  const msg = (text, kind) => {
+    const m = $('accMsg');
+    m.textContent = text || '';
+    m.className = 'acc-msg' + (kind ? ' ' + kind : '');
+  };
+
+  // i link delle email di invito e di reimpostazione arrivano qui con il tipo
+  // di link nell'indirizzo: va letto prima che la libreria lo ripulisca
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const tipoLink = hash.get('type');
+  const erroreLink = hash.get('error_description') || hash.get('error');
+
+  const sb = supabase.createClient(URL_SB, KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
+            flowType: 'implicit' },
+  });
+
+  // chiavi di sezione → elemento della pagina
+  const SEZIONI = {
+    kpi: () => $('kpiSection'), wb: () => $('winbackSection'),
+    rev: () => document.querySelector('section.revSection'), mix: () => $('mixSection'),
+    bridge: () => document.querySelector('section.bridgeSection'),
+    move: () => document.querySelector('section.moveSection'),
+    cohort: () => document.querySelector('section.cohortSection'),
+    conc: () => document.querySelector('section.concSection'),
+    list: () => $('listTitle') && $('listTitle').closest('section'),
+    adj: () => $('adjSection'), notes: () => document.querySelector('section.notesSection'),
+  };
+
+  function applicaAccesso(a) {
+    const tutte = Object.keys(SEZIONI).concat(['export']);
+    const vede = new Set(a.amministratore ? tutte : (a.sezioni || []));
+    Object.entries(SEZIONI).forEach(([k, el]) => {
+      const n = el();
+      if (n && !vede.has(k)) n.classList.add('nascosta-accesso');
+    });
+    // il deck propone solo ciò che la persona può vedere
+    for (let i = DECK_BLOCKS.length - 1; i >= 0; i--) {
+      if (!vede.has(DECK_BLOCKS[i].k)) {
+        deckSel.delete(DECK_BLOCKS[i].k);
+        DECK_BLOCKS.splice(i, 1);
+      }
+    }
+    Object.values(DECK_PRESETS).forEach(l => {
+      for (let i = l.length - 1; i >= 0; i--) if (!vede.has(l[i])) l.splice(i, 1);
+    });
+    renderDeckPanel();
+    if (!vede.has('export')) ['wbExport', 'exportBtn', 'adjExport'].forEach(id => {
+      const b = $(id); if (b) b.classList.add('nascosta-accesso');
+    });
+    // caricare file e ripristinare i dati riguarda solo chi amministra
+    if (!a.amministratore) ['importBtn', 'importPanel'].forEach(id => {
+      const b = $(id); if (b) b.classList.add('nascosta-accesso');
+    });
+
+    // chi è collegato, fino a quando, e il pulsante per uscire
+    const box = document.createElement('div');
+    box.className = 'utente';
+    const chi = document.createElement('strong');
+    chi.textContent = a.nome || a.email;
+    box.appendChild(chi);
+    const note = [];
+    if (a.ruolo) note.push(a.ruolo);
+    if (a.scade_il) note.push(T.scade(new Date(a.scade_il).toLocaleDateString(IT ? 'it-IT' : 'en-GB')));
+    if (!a.nomi_clienti) note.push(T.anonimi);
+    if (note.length) {
+      const s = document.createElement('span');
+      s.textContent = note.join(' · ');
+      box.appendChild(s);
+    }
+    const esciBtn = document.createElement('button');
+    esciBtn.className = 'btn';
+    esciBtn.type = 'button';
+    esciBtn.textContent = T.esci;
+    esciBtn.addEventListener('click', esci);
+    box.appendChild(esciBtn);
+    const dove = document.querySelector('.srcbar') || document.querySelector('.masthead .wrap');
+    if (dove) dove.appendChild(box);
+
+    // il pannello per dare e togliere accessi, solo a chi amministra
+    if (a.amministratore && typeof montaPannelloAccessi === 'function') {
+      montaPannelloAccessi(sb, IT);
+    }
+  }
+
+  async function carica() {
+    msg(T.carico);
+    let res;
+    try { res = await sb.rpc('cockpit_payload'); } catch (e) { res = { error: e }; }
+    if (res.error) { msg(T.errore_rete, 'err'); return; }
+    const data = res.data || {};
+    if (data.errore) {
+      msg(T['motivo_' + data.errore] || T.errore_rete, 'err');
+      $('accForm').hidden = true;
+      $('accDimenticata').hidden = true;
+      $('accEsci').hidden = false;
+      return;
+    }
+    if (avviato) { location.reload(); return; }
+    avviato = true;
+    window.__COCKPIT__ = data.dati;
+    window.__ACCESSO__ = data.accesso;
+    // struttura e codice del cruscotto non stanno in questa pagina pubblica:
+    // arrivano dal database insieme ai dati, solo dopo un accesso valido
+    $('accesso').insertAdjacentHTML('afterend', data.app.html);
+    const url = URL.createObjectURL(new Blob([data.app.js], { type: 'text/javascript' }));
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = () => {
+      URL.revokeObjectURL(url);
+      applicaAccesso(data.accesso);
+      document.body.classList.remove('bloccato');
+      msg('');
+    };
+    s.onerror = () => msg(T.errore_rete, 'err');
+    document.body.appendChild(s);
+  }
+  let avviato = false;
+
+  async function esci() {
+    // lo stato salvato nel browser contiene dati: su un computer condiviso non resta
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith('cohort-cockpit-web-v1:'))
+        .forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+    try { await sb.auth.signOut(); } catch (e) {}
+    location.replace(location.pathname);
+  }
+
+  $('accForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    msg(T.verifico);
+    const { error } = await sb.auth.signInWithPassword({
+      email: $('accEmail').value.trim(), password: $('accPw').value });
+    $('accPw').value = '';
+    if (error) { msg(T.credenziali, 'err'); return; }
+    carica();
+  });
+
+  $('accNuova').addEventListener('submit', async e => {
+    e.preventDefault();
+    const p1 = $('accPw1').value, p2 = $('accPw2').value;
+    if (p1.length < 10) { msg(T.corta, 'err'); return; }
+    if (p1 !== p2) { msg(T.diverse, 'err'); return; }
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) { msg(error.message, 'err'); return; }
+    $('accPw1').value = ''; $('accPw2').value = '';
+    $('accNuova').hidden = true;
+    history.replaceState(null, '', location.pathname);
+    carica();
+  });
+
+  $('accDimenticata').addEventListener('click', async () => {
+    const email = $('accEmail').value.trim();
+    if (!email) { msg(T.serve_email, 'err'); return; }
+    try {
+      await sb.auth.resetPasswordForEmail(email,
+        { redirectTo: location.origin + location.pathname });
+    } catch (e) {}
+    // stesso messaggio che l'indirizzo esista o no: non si rivela chi è abilitato
+    msg(T.inviata, 'ok');
+  });
+
+  $('accEsci').addEventListener('click', esci);
+
+  (async () => {
+    if (erroreLink) msg(T.link_scaduto, 'err');
+    const { data } = await sb.auth.getSession();
+    const session = data && data.session;
+    if (session && (tipoLink === 'invite' || tipoLink === 'recovery')) {
+      $('accForm').hidden = true;
+      $('accDimenticata').hidden = true;
+      $('accNuova').hidden = false;
+      return;
+    }
+    if (session) carica();
+  })();
+})();
+
+</script>
+</body>
+</html>
