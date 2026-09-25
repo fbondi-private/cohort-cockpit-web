@@ -443,6 +443,17 @@ body.deck #pannelloAccessi{display:none}
   const tipoLink = hash.get('type');
   const erroreLink = hash.get('error_description') || hash.get('error');
 
+  // i link delle email portano un codice monouso (token_hash). Non va usato
+  // all'apertura: i filtri di sicurezza della posta aprono i link per
+  // controllarli e lo consumerebbero prima della persona. Si usa solo quando
+  // la persona salva la password, perché i filtri non compilano i moduli.
+  const query = new URLSearchParams(location.search);
+  const tipoCodice = query.get('type') || hash.get('type');
+  const codice = ['invite', 'recovery'].includes(tipoCodice)
+    ? (query.get('token_hash') || hash.get('token_hash')) : null;
+  let codiceUsato = false;
+  if (codice) history.replaceState(null, '', location.pathname);
+
   const sb = supabase.createClient(URL_SB, KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
             flowType: 'implicit' },
@@ -575,6 +586,19 @@ body.deck #pannelloAccessi{display:none}
     const p1 = $('accPw1').value, p2 = $('accPw2').value;
     if (p1.length < 10) { msg(T.corta, 'err'); return; }
     if (p1 !== p2) { msg(T.diverse, 'err'); return; }
+    if (codice && !codiceUsato) {
+      msg(T.verifico);
+      const { error: e1 } = await sb.auth.verifyOtp({ token_hash: codice, type: tipoCodice });
+      if (e1) {
+        $('accPw1').value = ''; $('accPw2').value = '';
+        $('accNuova').hidden = true;
+        $('accForm').hidden = false;
+        $('accDimenticata').hidden = false;
+        msg(T.link_scaduto, 'err');
+        return;
+      }
+      codiceUsato = true;
+    }
     const { error } = await sb.auth.updateUser({ password: p1 });
     if (error) { msg(error.message, 'err'); return; }
     $('accPw1').value = ''; $('accPw2').value = '';
@@ -598,6 +622,12 @@ body.deck #pannelloAccessi{display:none}
 
   (async () => {
     if (erroreLink) msg(T.link_scaduto, 'err');
+    if (codice) {
+      $('accForm').hidden = true;
+      $('accDimenticata').hidden = true;
+      $('accNuova').hidden = false;
+      return;
+    }
     const { data } = await sb.auth.getSession();
     const session = data && data.session;
     if (session && (tipoLink === 'invite' || tipoLink === 'recovery')) {
