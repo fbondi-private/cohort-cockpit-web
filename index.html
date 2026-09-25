@@ -492,8 +492,8 @@ body.deck #pannelloAccessi{display:none}
     if (!vede.has('export')) ['wbExport', 'exportBtn', 'adjExport'].forEach(id => {
       const b = $(id); if (b) b.classList.add('nascosta-accesso');
     });
-    // caricare file e ripristinare i dati riguarda solo chi amministra
-    if (!a.amministratore) ['importBtn', 'importPanel'].forEach(id => {
+    // caricare file, ripristinare i dati e preparare il deck riguarda solo chi amministra
+    if (!a.amministratore) ['importBtn', 'importPanel', 'deckBtn', 'deckPanel'].forEach(id => {
       const b = $(id); if (b) b.classList.add('nascosta-accesso');
     });
 
