@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Cohort Cockpit</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <style>
 :root{
   --ground:#EFF2F5; --surface:#FFFFFF; --surface-2:#F7F9FA;
@@ -107,6 +109,14 @@ section{margin-top:44px}
 .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:900px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.g2 > .card:only-child{grid-column:1 / -1}
+@media (max-width:760px){
+  .controls{position:static}
+  .controls .wrap{gap:10px 16px}
+  .wrap{padding-left:16px; padding-right:16px}
+  .chartbox svg{min-width:560px}
+  #revChart svg{min-width:820px}
+}
 .kpis{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:0;
   background:var(--surface); border-top:1px solid var(--line);
   border-left:1px solid var(--line); border-radius:var(--r); overflow:hidden;
@@ -226,7 +236,10 @@ select.wbSet{font-size:12px; padding:3px 7px}
 .chip em{font-style:normal; font-family:var(--mono); font-size:10.5px}
 .chip em.ok{color:var(--pos)} .chip em.no{color:var(--faint)}
 #wbTable td:first-child, #listTable td:first-child, #topTable td:first-child{
-  white-space:normal; max-width:270px; overflow-wrap:anywhere}
+  white-space:normal; min-width:180px; max-width:300px; overflow-wrap:break-word}
+#wbTable th, #topTable th, #concTable th{white-space:normal; vertical-align:bottom}
+#topTable th, #topTable td{padding-left:7px; padding-right:7px}
+#topTable td:first-child{min-width:150px}
 .status{font-size:12.5px; color:var(--muted); font-family:var(--mono)}
 .status.ok{color:var(--pos)} .status.err{color:var(--neg)}
 code{font-family:var(--mono); font-size:.9em; background:var(--surface-2);
@@ -323,10 +336,15 @@ body:not(.bloccato) #accesso{display:none}
 .acc-msg.err{color:var(--neg)} .acc-msg.ok{color:var(--pos)}
 .acc-foot{margin:20px 0 0; font-size:11.5px; color:var(--faint)}
 .nascosta-accesso{display:none!important}
-.utente{display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12.5px;
-  color:var(--muted); margin-top:6px}
-.utente strong{color:var(--ink-2); font-weight:600}
+.srcbar.con-utente{flex-direction:column; align-items:flex-end; gap:16px}
+.utente{display:flex; gap:12px; align-items:center; font-size:12px; color:var(--muted)}
+.utente .chi{display:flex; flex-direction:column; align-items:flex-end; line-height:1.35}
+.utente strong{color:var(--ink); font-weight:600; font-size:13.5px}
 .utente .btn{font-size:12px; padding:4px 10px}
+@media (max-width:760px){
+  .srcbar.con-utente{align-items:flex-start}
+  .utente .chi{align-items:flex-start}
+}
 .acc-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 18px; margin-top:12px}
 @media (max-width:760px){.acc-grid{grid-template-columns:minmax(0,1fr)}}
 .acc-grid label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted)}
@@ -403,7 +421,7 @@ body.deck #pannelloAccessi{display:none}
     motivo_revocato: 'Il tuo accesso è stato revocato.',
     motivo_nessun_dato: 'I dati non sono ancora disponibili.',
     motivo_non_autenticato: 'Sessione scaduta: accedi di nuovo.',
-    scade: d => `accesso fino al ${d}`, anonimi: 'clienti in forma anonima',
+    scade: d => `Accesso fino al ${d}`,
   } : {
     sub: 'Restricted access', email: 'Email', password: 'Password', entra: 'Sign in',
     nuova_h: 'Choose your password', nuova: 'New password (at least 10 characters)',
@@ -423,7 +441,7 @@ body.deck #pannelloAccessi{display:none}
     motivo_revocato: 'Your access has been revoked.',
     motivo_nessun_dato: 'The data is not available yet.',
     motivo_non_autenticato: 'Session expired: sign in again.',
-    scade: d => `access until ${d}`, anonimi: 'clients shown anonymously',
+    scade: d => `Access until ${d}`,
   };
 
   const $ = id => document.getElementById(id);
@@ -469,6 +487,9 @@ body.deck #pannelloAccessi{display:none}
     conc: () => document.querySelector('section.concSection'),
     list: () => $('listTitle') && $('listTitle').closest('section'),
     adj: () => $('adjSection'), notes: () => document.querySelector('section.notesSection'),
+    // la scheda arriva solo nella versione completa del codice, che il database
+    // consegna ad amministratori e a chi ha questa sezione
+    riserve: () => $('qualityList') && $('qualityList').closest('.card'),
   };
 
   function applicaAccesso(a) {
@@ -497,29 +518,30 @@ body.deck #pannelloAccessi{display:none}
       const b = $(id); if (b) b.classList.add('nascosta-accesso');
     });
 
-    // chi è collegato, fino a quando, e il pulsante per uscire
+    // chi è collegato e fino a quando, con il pulsante per uscire. Il profilo
+    // assegnato non si mostra a chi lo riceve.
     const box = document.createElement('div');
     box.className = 'utente';
-    const chi = document.createElement('strong');
-    chi.textContent = a.nome || a.email;
-    box.appendChild(chi);
-    const note = [];
-    if (a.ruolo) note.push(a.ruolo);
-    if (a.scade_il) note.push(T.scade(new Date(a.scade_il).toLocaleDateString(IT ? 'it-IT' : 'en-GB')));
-    if (!a.nomi_clienti) note.push(T.anonimi);
-    if (note.length) {
+    const chi = document.createElement('div');
+    chi.className = 'chi';
+    const nome = document.createElement('strong');
+    nome.textContent = a.nome || a.email;
+    chi.appendChild(nome);
+    if (a.scade_il) {
       const s = document.createElement('span');
-      s.textContent = note.join(' · ');
-      box.appendChild(s);
+      s.textContent = T.scade(new Date(a.scade_il).toLocaleDateString(IT ? 'it-IT' : 'en-GB'));
+      chi.appendChild(s);
     }
+    box.appendChild(chi);
     const esciBtn = document.createElement('button');
     esciBtn.className = 'btn';
     esciBtn.type = 'button';
     esciBtn.textContent = T.esci;
     esciBtn.addEventListener('click', esci);
     box.appendChild(esciBtn);
-    const dove = document.querySelector('.srcbar') || document.querySelector('.masthead .wrap');
-    if (dove) dove.appendChild(box);
+    const dove = document.querySelector('.srcbar');
+    if (dove) { dove.classList.add('con-utente'); dove.prepend(box); }
+    else { const m = document.querySelector('.masthead .wrap'); if (m) m.appendChild(box); }
 
     // il pannello per dare e togliere accessi, solo a chi amministra
     if (a.amministratore && typeof montaPannelloAccessi === 'function') {
