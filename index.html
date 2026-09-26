@@ -132,6 +132,7 @@ section{margin-top:44px}
   .wrap{padding-left:16px; padding-right:16px}
   .chartbox svg{min-width:560px}
   #revChart svg{min-width:820px}
+  #gaugeChart svg{min-width:0}   
   .masthead .mside{flex:1 1 100%; min-width:0}
   .controls select{width:160px}
 }
@@ -161,6 +162,19 @@ section{margin-top:44px}
 .kpi.sev-good{border-left-color:var(--pos)}
 .kpi.sev-warn{border-left-color:var(--warn)}
 .kpi.sev-bad{border-left-color:var(--neg)}
+.card.gauge[hidden]{display:none}
+.gauge-body{display:grid; grid-template-columns:minmax(0,600px) minmax(0,1fr); gap:12px 32px;
+  align-items:center}
+@media (max-width:900px){.gauge-body{grid-template-columns:minmax(0,1fr)}}
+.gg-row{display:flex; gap:12px; align-items:flex-start; padding:10px 0;
+  border-bottom:1px solid var(--line-soft)}
+.gg-row:last-child{border-bottom:0}
+.gg-row > svg, .gg-row > .swatch{margin-top:5px; flex:none}
+.gg-lab{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--faint);
+  font-weight:700}
+.gg-val{font-size:20px; font-weight:600; letter-spacing:-.02em}
+.gg-sub{font-size:12px; color:var(--muted); display:flex; gap:6px; align-items:center;
+  flex-wrap:wrap}
 .chartbox{width:100%; overflow-x:auto}
 #moveChart svg{min-width:820px}
 svg{display:block; max-width:100%; height:auto}
