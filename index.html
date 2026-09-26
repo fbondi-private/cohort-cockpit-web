@@ -58,19 +58,29 @@ h1,h2,h3{font-family:var(--serif); font-weight:600; text-wrap:balance; margin:0}
 .num{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
 .wrap{max-width:1240px; margin:0 auto; padding:0 24px 96px}
 .masthead{border-bottom:1px solid var(--line); background:var(--surface)}
-.masthead .wrap{padding-top:26px; padding-bottom:22px; display:flex; flex-wrap:wrap;
-  gap:20px; align-items:flex-end; justify-content:space-between}
+.masthead .wrap{padding-top:26px; padding-bottom:22px; display:flex; flex-wrap:nowrap;
+  gap:20px 32px; align-items:flex-end; justify-content:space-between}
+.masthead .wrap > :first-child{flex:1 1 auto; min-width:0}
+.masthead .mside{flex:none}
+@media (max-width:760px){.masthead .wrap{flex-wrap:wrap}}
 .brandline{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
 h1{font-size:28px; letter-spacing:-.015em}
 .sub{color:var(--muted); font-size:13.5px; max-width:60ch; margin-top:5px}
 .stamp{font-size:11.5px; text-transform:uppercase; letter-spacing:.09em;
   color:var(--faint); font-weight:600}
 .srcbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.mside{display:flex; flex-direction:column; align-items:flex-end; gap:14px}
+.tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+.tools .ctl{margin-right:6px}
+@media (max-width:760px){.mside{align-items:flex-start} .tools{justify-content:flex-start}}
 .controls{position:sticky; top:0; z-index:20; background:var(--surface);
   border-bottom:1px solid var(--line); box-shadow:0 1px 0 rgba(0,0,0,.02)}
 .controls .wrap{padding-top:11px; padding-bottom:11px; display:flex; gap:22px;
   align-items:center; flex-wrap:wrap}
 .ctl{display:flex; align-items:center; gap:8px}
+.controls .wrap{align-items:flex-end; gap:12px 20px}
+.controls .ctl{flex-direction:column; align-items:flex-start; gap:4px}
+.controls .seg button{padding:5px 9px}
 .ctl>label{font-size:11px; text-transform:uppercase; letter-spacing:.08em;
   color:var(--faint); font-weight:600}
 .seg{display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden}
@@ -101,6 +111,11 @@ section{margin-top:44px}
   padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:20px}
 .shead h2{font-size:19px; letter-spacing:-.01em}
 .shead p{margin:0; color:var(--muted); font-size:13px}
+.shead:has(.btn){flex-wrap:nowrap}
+.shead:has(.btn) h2{flex:none}
+.shead:has(.btn) p{flex:1 1 0; min-width:0}
+.shead:has(.btn) .btn{flex:none}
+@media (max-width:760px){.shead:has(.btn){flex-wrap:wrap} .shead:has(.btn) h2{flex:0 1 auto}}
 .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
   padding:20px; box-shadow:var(--shadow)}
 .card h3{font-size:14.5px; margin-bottom:2px}
@@ -109,6 +124,7 @@ section{margin-top:44px}
 .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:900px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.g2{align-items:start}
 .g2 > .card:only-child{grid-column:1 / -1}
 @media (max-width:760px){
   .controls{position:static}
@@ -116,6 +132,8 @@ section{margin-top:44px}
   .wrap{padding-left:16px; padding-right:16px}
   .chartbox svg{min-width:560px}
   #revChart svg{min-width:820px}
+  .masthead .mside{flex:1 1 100%; min-width:0}
+  .controls select{width:160px}
 }
 .kpis{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:0;
   background:var(--surface); border-top:1px solid var(--line);
@@ -201,6 +219,12 @@ input[type="search"]{width:230px}
   text-align:center; color:var(--muted); font-size:13.5px; background:var(--surface-2)}
 .drop.over{border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink)}
 .hidden{display:none!important}
+.scrollbox{max-height:560px; overflow-y:auto; padding-right:4px}
+#adjList.scrollbox{max-height:420px}
+@media (min-width:901px){
+  body:not(.deck) .notelist{columns:2; column-gap:36px}
+  body:not(.deck) .notelist > div{break-inside:avoid}
+}
 .tl{display:inline-flex; gap:2px; vertical-align:-1px}
 .tl i{width:7px; height:12px; border-radius:1.5px; background:var(--line);
   display:inline-block}
@@ -240,6 +264,8 @@ select.wbSet{font-size:12px; padding:3px 7px}
 #wbTable th, #topTable th, #concTable th{white-space:normal; vertical-align:bottom}
 #topTable th, #topTable td{padding-left:7px; padding-right:7px}
 #topTable td:first-child{min-width:150px}
+#entityTable th, #entityTable td{padding-left:8px; padding-right:8px}
+#entityTable th{white-space:normal; vertical-align:bottom}
 .status{font-size:12.5px; color:var(--muted); font-family:var(--mono)}
 .status.ok{color:var(--pos)} .status.err{color:var(--neg)}
 code{font-family:var(--mono); font-size:.9em; background:var(--surface-2);
@@ -336,15 +362,11 @@ body:not(.bloccato) #accesso{display:none}
 .acc-msg.err{color:var(--neg)} .acc-msg.ok{color:var(--pos)}
 .acc-foot{margin:20px 0 0; font-size:11.5px; color:var(--faint)}
 .nascosta-accesso{display:none!important}
-.srcbar.con-utente{flex-direction:column; align-items:flex-end; gap:16px}
 .utente{display:flex; gap:12px; align-items:center; font-size:12px; color:var(--muted)}
 .utente .chi{display:flex; flex-direction:column; align-items:flex-end; line-height:1.35}
 .utente strong{color:var(--ink); font-weight:600; font-size:13.5px}
 .utente .btn{font-size:12px; padding:4px 10px}
-@media (max-width:760px){
-  .srcbar.con-utente{align-items:flex-start}
-  .utente .chi{align-items:flex-start}
-}
+@media (max-width:760px){.utente .chi{align-items:flex-start}}
 .acc-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 18px; margin-top:12px}
 @media (max-width:760px){.acc-grid{grid-template-columns:minmax(0,1fr)}}
 .acc-grid label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted)}
@@ -539,9 +561,9 @@ body.deck #pannelloAccessi{display:none}
     esciBtn.textContent = T.esci;
     esciBtn.addEventListener('click', esci);
     box.appendChild(esciBtn);
-    const dove = document.querySelector('.srcbar');
-    if (dove) { dove.classList.add('con-utente'); dove.prepend(box); }
-    else { const m = document.querySelector('.masthead .wrap'); if (m) m.appendChild(box); }
+    // in alto a destra, sopra gli strumenti e la fonte dati
+    const dove = document.querySelector('.mside') || document.querySelector('.masthead .wrap');
+    if (dove) dove.prepend(box);
 
     // il pannello per dare e togliere accessi, solo a chi amministra
     if (a.amministratore && typeof montaPannelloAccessi === 'function') {
