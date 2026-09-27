@@ -189,6 +189,11 @@ section{margin-top:44px}
 .cv-bar i{display:block; height:100%; border-radius:3px}
 .cv-val{text-align:right; font-weight:600}
 #covidSl[hidden]{display:none}
+.cv-list{margin:0; padding-left:18px; font-size:13.5px; line-height:1.55; color:var(--ink-2)}
+.cv-list li{margin-bottom:8px}
+.cv-list li:last-child{margin-bottom:0}
+#covidIndTable td:first-child{white-space:normal; min-width:220px}
+@media (max-width:560px){#covidIndTable td:first-child{min-width:140px}}
 @media (max-width:560px){
   .cv-row{grid-template-columns:minmax(0,1fr) 3.2em}
   .cv-row > div:first-child{grid-column:1 / -1}
