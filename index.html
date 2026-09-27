@@ -177,6 +177,21 @@ section{margin-top:44px}
   flex-wrap:wrap}
 .chartbox{width:100%; overflow-x:auto}
 #moveChart svg{min-width:820px}
+#covidChart svg{min-width:760px}
+.cv-read p{margin:0 0 12px; font-size:13.5px; line-height:1.55; color:var(--ink-2)}
+.cv-read p:last-child{margin-bottom:0}
+.cv-row{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 3.2em;
+  gap:4px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line-soft)}
+.cv-row:last-child{border-bottom:0}
+.cv-lab{font-size:13px; color:var(--ink)}
+.cv-n{display:block; font-size:11.5px; color:var(--faint); margin-left:17px}
+.cv-bar{height:10px; background:var(--surface-2); border-radius:3px; overflow:hidden}
+.cv-bar i{display:block; height:100%; border-radius:3px}
+.cv-val{text-align:right; font-weight:600}
+@media (max-width:560px){
+  .cv-row{grid-template-columns:minmax(0,1fr) 3.2em}
+  .cv-row > div:first-child{grid-column:1 / -1}
+}
 svg{display:block; max-width:100%; height:auto}
 .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted);
   margin-top:12px; align-items:center}
@@ -519,6 +534,7 @@ body.deck #pannelloAccessi{display:none}
   const SEZIONI = {
     kpi: () => $('kpiSection'), wb: () => $('winbackSection'),
     rev: () => document.querySelector('section.revSection'), mix: () => $('mixSection'),
+    covid: () => $('covidSection'),
     bridge: () => document.querySelector('section.bridgeSection'),
     move: () => document.querySelector('section.moveSection'),
     cohort: () => document.querySelector('section.cohortSection'),
