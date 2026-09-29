@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="strict-origin">
 <title>Management and Investor Cockpit</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
@@ -427,6 +427,18 @@ body:not(.bloccato) #accesso{display:none}
 .acc-msg{font-size:13px; margin:14px 0 0; min-height:1.2em; color:var(--muted)}
 .acc-msg.err{color:var(--neg)} .acc-msg.ok{color:var(--pos)}
 .acc-foot{margin:20px 0 0; font-size:11.5px; color:var(--faint)}
+.acc-testo{font-size:13.5px; line-height:1.5; color:var(--ink-2); margin:0 0 10px}
+.acc-piccolo{font-size:12px; color:var(--muted); margin:14px 0 0}
+.acc-qr{display:block; width:184px; height:184px; margin:6px auto 10px; background:#fff;
+  border:1px solid var(--line); border-radius:10px; padding:8px}
+.acc-chiave{font-size:12px; color:var(--muted); margin:0 0 4px}
+.acc-chiave summary{cursor:pointer}
+.acc-chiave code{display:block; margin-top:6px; font-size:13px; letter-spacing:.04em;
+  word-break:break-all; color:var(--ink); user-select:all}
+.acc-box input.acc-otp{font-size:20px; letter-spacing:.3em; text-align:center;
+  font-variant-numeric:tabular-nums}
+.acc-ts{margin-top:12px}
+.acc-ts:empty{display:none}
 .nascosta-accesso{display:none!important}
 .utente{display:flex; gap:12px; align-items:center; font-size:12px; color:var(--muted)}
 .utente .chi{display:flex; flex-direction:column; align-items:flex-end; line-height:1.35}
@@ -463,6 +475,7 @@ body.deck #pannelloAccessi{display:none}
       <input id="accEmail" type="email" autocomplete="username" required>
       <label for="accPw" data-t="password">Password</label>
       <input id="accPw" type="password" autocomplete="current-password" required>
+      <div id="accTurnstile" class="acc-ts"></div>
       <button class="btn primary" id="accEntra" type="submit" data-t="entra">Sign in</button>
     </form>
     <form id="accNuova" hidden>
@@ -472,6 +485,26 @@ body.deck #pannelloAccessi{display:none}
       <label for="accPw2" data-t="ripeti">Repeat the password</label>
       <input id="accPw2" type="password" autocomplete="new-password" minlength="10" required>
       <button class="btn primary" type="submit" data-t="salva">Save and continue</button>
+    </form>
+    <form id="accAttiva" hidden>
+      <p class="acc-sub" data-t="mfa_attiva_h">Two-step verification</p>
+      <p class="acc-testo" data-t="mfa_attiva_1">To protect the data, besides the password you need a code from an authenticator app on your phone.</p>
+      <p class="acc-testo" data-t="mfa_attiva_2">Scan this QR code with the app, then type below the 6-digit code it shows.</p>
+      <img id="accQr" class="acc-qr" width="184" height="184" alt="QR code for the authenticator app">
+      <details class="acc-chiave">
+        <summary data-t="mfa_chiave">Can't scan it? Enter this key in the app:</summary>
+        <code id="accSegreto"></code>
+      </details>
+      <label for="accOtp1" data-t="mfa_codice_l">Code</label>
+      <input id="accOtp1" class="acc-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+      <button class="btn primary" type="submit" data-t="mfa_attiva_btn">Activate</button>
+    </form>
+    <form id="accCodice" hidden>
+      <p class="acc-sub" data-t="mfa_codice_h">Type the 6-digit code from your authenticator app</p>
+      <label for="accOtp2" data-t="mfa_codice_l">Code</label>
+      <input id="accOtp2" class="acc-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+      <button class="btn primary" type="submit" data-t="mfa_verifica">Verify</button>
+      <p class="acc-testo acc-piccolo" data-t="mfa_perso">Lost or changed your phone? Ask whoever gave you access to reset the two-step verification.</p>
     </form>
     <button class="acc-link" id="accDimenticata" type="button" data-t="dimenticata">Forgot your password?</button>
     <button class="acc-link" id="accEsci" type="button" hidden data-t="esci">Sign out</button>
@@ -490,6 +523,10 @@ body.deck #pannelloAccessi{display:none}
 (function () {
   const URL_SB = 'https://hnndwoigwaigqnlrwstv.supabase.co';
   const KEY = 'sb_publishable_y8IqWK-k0DSL1TT1snGUXw_6wLwC_Cw';     // chiave pubblica: da sola non apre nulla
+  // controllo anti-robot di Cloudflare (Turnstile): chiave pubblica del widget,
+  // vuota finché non è configurato
+  const TURNSTILE = '';
+  const CON_TURNSTILE = !!TURNSTILE && !TURNSTILE.startsWith('__');
 
   // il pannello Accessi segue la lingua del browser di chi amministra
   const IT = /^it\b/i.test(navigator.language || 'it');
@@ -514,6 +551,19 @@ body.deck #pannelloAccessi{display:none}
     motivo_nessun_dato: 'I dati non sono ancora disponibili.',
     motivo_non_autenticato: 'Sessione scaduta: accedi di nuovo.',
     scade: d => `Accesso fino al ${d}`,
+    mfa_attiva_h: 'Verifica in due passaggi',
+    mfa_attiva_1: 'Per proteggere i dati, oltre alla password serve un codice da un\'app di autenticazione sul telefono (per esempio Google Authenticator, Microsoft Authenticator o 1Password).',
+    mfa_attiva_2: 'Inquadra questo codice QR con l\'app, poi scrivi qui sotto il codice di 6 cifre che ti mostra.',
+    mfa_chiave: 'Non riesci a inquadrarlo? Inserisci nell\'app questa chiave:',
+    mfa_attiva_btn: 'Attiva',
+    mfa_codice_h: 'Scrivi il codice di 6 cifre dell\'app di autenticazione',
+    mfa_codice_l: 'Codice', mfa_verifica: 'Verifica',
+    mfa_scaduto: 'Per sicurezza il codice viene richiesto ogni 10 giorni.',
+    mfa_errato: 'Codice errato o scaduto: scrivi quello che l\'app mostra adesso.',
+    mfa_troppi: 'Troppi tentativi: aspetta qualche minuto e riprova.',
+    mfa_perso: 'Hai perso o cambiato telefono? Chiedi a chi ti ha dato l\'accesso di azzerare la verifica in due passaggi.',
+    mfa_errore: 'Non riesco a preparare la verifica in due passaggi. Riprova fra poco.',
+    ts_errore: 'Il controllo di sicurezza non è riuscito: ricarica la pagina e riprova.',
     },
     en: {
     sub: 'Restricted access', email: 'Email', password: 'Password', entra: 'Sign in',
@@ -535,6 +585,19 @@ body.deck #pannelloAccessi{display:none}
     motivo_nessun_dato: 'The data is not available yet.',
     motivo_non_autenticato: 'Session expired: sign in again.',
     scade: d => `Access until ${d}`,
+    mfa_attiva_h: 'Two-step verification',
+    mfa_attiva_1: 'To protect the data, besides the password you need a code from an authenticator app on your phone (for example Google Authenticator, Microsoft Authenticator or 1Password).',
+    mfa_attiva_2: 'Scan this QR code with the app, then type below the 6-digit code it shows.',
+    mfa_chiave: 'Can\'t scan it? Enter this key in the app:',
+    mfa_attiva_btn: 'Activate',
+    mfa_codice_h: 'Type the 6-digit code from your authenticator app',
+    mfa_codice_l: 'Code', mfa_verifica: 'Verify',
+    mfa_scaduto: 'For security, the code is asked again every 10 days.',
+    mfa_errato: 'Wrong or expired code: type the one the app shows now.',
+    mfa_troppi: 'Too many attempts: wait a few minutes and try again.',
+    mfa_perso: 'Lost or changed your phone? Ask whoever gave you access to reset the two-step verification.',
+    mfa_errore: 'The two-step verification cannot be set up right now. Try again shortly.',
+    ts_errore: 'The security check failed: reload the page and try again.',
     },
   };
   // la schermata di accesso è sempre in inglese, qualunque sia la lingua del browser
@@ -650,17 +713,33 @@ body.deck #pannelloAccessi{display:none}
     }
   }
 
+
+  // le schermate del riquadro di accesso: ognuna mostra solo i suoi elementi
+  const SCHERMATE = {
+    login: ['accForm', 'accDimenticata'], nuova: ['accNuova'],
+    attiva: ['accAttiva', 'accEsci'], codice: ['accCodice', 'accEsci'],
+    attesa: [], errore: ['accEsci'],
+  };
+  function mostra(nome) {
+    const vis = new Set(SCHERMATE[nome]);
+    ['accForm', 'accDimenticata', 'accNuova', 'accAttiva', 'accCodice', 'accEsci']
+      .forEach(id => { $(id).hidden = !vis.has(id); });
+    if (nome === 'login') avviaTurnstile();
+    const campo = { nuova: 'accPw1', attiva: 'accOtp1', codice: 'accOtp2' }[nome];
+    if (campo) $(campo).focus();
+  }
+
   async function carica() {
     msg(T.carico);
     let res;
     try { res = await sb.rpc('cockpit_payload'); } catch (e) { res = { error: e }; }
-    if (res.error) { msg(T.errore_rete, 'err'); return; }
+    if (res.error) { msg(T.errore_rete, 'err'); mostra('errore'); return; }
     const data = res.data || {};
     if (data.errore) {
+      // il database chiede il codice dell'app: si chiede e poi si riprova
+      if (/^mfa_/.test(data.errore)) { chiediCodice(data.errore); return; }
       msg(T['motivo_' + data.errore] || T.errore_rete, 'err');
-      $('accForm').hidden = true;
-      $('accDimenticata').hidden = true;
-      $('accEsci').hidden = false;
+      mostra('errore');
       return;
     }
     if (avviato) { location.reload(); return; }
@@ -684,6 +763,101 @@ body.deck #pannelloAccessi{display:none}
   }
   let avviato = false;
 
+  // Verifica in due passaggi: un codice di 6 cifre da un'app di autenticazione.
+  // Chi la deve usare lo decide il database, che rifiuta i dati se il codice
+  // non è stato confermato negli ultimi 10 giorni; nel frattempo la sessione
+  // resta aperta su questo dispositivo.
+  let fattore = null;       // l'app da collegare o da verificare
+  let dopoCodice = null;    // cosa fare dopo il codice (di norma: aprire il cruscotto)
+
+  async function chiediCodice(motivo) {
+    if (motivo !== 'mfa_da_attivare') {
+      const { data, error } = await sb.auth.mfa.listFactors();
+      if (error || !data) { msg(T.mfa_errore, 'err'); mostra('errore'); return; }
+      const f = (data.totp || []).find(x => x.status === 'verified');
+      if (f) {
+        fattore = f.id;
+        mostra('codice');
+        msg(motivo === 'mfa_scaduto' ? T.mfa_scaduto : '');
+        return;
+      }
+    }
+    attivaApp();
+  }
+
+  async function attivaApp() {
+    msg(T.verifico);
+    mostra('attesa');
+    // un collegamento lasciato a metà blocca il successivo: si toglie prima
+    const { data: l } = await sb.auth.mfa.listFactors();
+    for (const f of ((l && l.all) || []).filter(x => x.status !== 'verified')) {
+      await sb.auth.mfa.unenroll({ factorId: f.id });
+    }
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp',
+      issuer: 'Eventboost Cockpit', friendlyName: 'App ' + new Date().toISOString() });
+    if (error || !data) { msg(T.mfa_errore, 'err'); mostra('errore'); return; }
+    fattore = data.id;
+    $('accQr').src = data.totp.qr_code;
+    $('accSegreto').textContent = data.totp.secret.replace(/(.{4})(?=.)/g, '$1 ');
+    mostra('attiva');
+    msg('');
+  }
+
+  async function verificaCodice(campo) {
+    const code = campo.value.replace(/\D/g, '');
+    if (code.length !== 6) { msg(T.mfa_errato, 'err'); campo.focus(); return; }
+    msg(T.verifico);
+    const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: fattore, code });
+    campo.value = '';
+    if (error) {
+      msg(error.status === 429 ? T.mfa_troppi : T.mfa_errato, 'err');
+      campo.focus();
+      return;
+    }
+    const poi = dopoCodice || carica;
+    dopoCodice = null;
+    mostra('attesa');
+    await poi();
+  }
+  $('accAttiva').addEventListener('submit', e => { e.preventDefault(); verificaCodice($('accOtp1')); });
+  $('accCodice').addEventListener('submit', e => { e.preventDefault(); verificaCodice($('accOtp2')); });
+
+  // Controllo anti-robot di Cloudflare sull'accesso e sulla password dimenticata.
+  // Di norma non si vede: compare una casella solo se Cloudflare ha un dubbio.
+  // Ogni gettone vale una volta sola: dopo ogni uso se ne prepara un altro.
+  let tsWidget = null, tsGettone = null, tsAvviato = false;
+  const tsAttese = [];
+  function avviaTurnstile() {
+    if (!CON_TURNSTILE || tsAvviato) return;
+    tsAvviato = true;
+    window.__tsPronto = () => {
+      tsWidget = turnstile.render('#accTurnstile', {
+        sitekey: TURNSTILE, language: 'en', appearance: 'interaction-only', size: 'flexible',
+        callback: t => { tsGettone = t; tsAttese.splice(0).forEach(r => r()); },
+        'expired-callback': () => { tsGettone = null; },
+        'error-callback': () => { tsGettone = null; },
+      });
+    };
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__tsPronto';
+    s.async = true;
+    document.head.appendChild(s);
+  }
+  async function gettone() {
+    if (!CON_TURNSTILE) return undefined;
+    if (!tsGettone) {
+      // si aspetta il controllo, ma non per sempre
+      await new Promise(r => { tsAttese.push(r); setTimeout(r, 30000); });
+    }
+    const t = tsGettone;
+    tsGettone = null;
+    return t || undefined;
+  }
+  function nuovoGettone() {
+    if (tsWidget !== null && window.turnstile) { tsGettone = null; turnstile.reset(tsWidget); }
+  }
+  const erroreControllo = err => !!err && (err.code === 'captcha_failed' || /captcha/i.test(err.message || ''));
+
   async function esci() {
     // lo stato salvato nel browser contiene dati: su un computer condiviso non resta
     try {
@@ -697,10 +871,14 @@ body.deck #pannelloAccessi{display:none}
   $('accForm').addEventListener('submit', async e => {
     e.preventDefault();
     msg(T.verifico);
+    const captchaToken = await gettone();
     const { error } = await sb.auth.signInWithPassword({
-      email: $('accEmail').value.trim(), password: $('accPw').value });
+      email: $('accEmail').value.trim(), password: $('accPw').value,
+      options: captchaToken ? { captchaToken } : undefined });
+    nuovoGettone();
     $('accPw').value = '';
-    if (error) { msg(T.credenziali, 'err'); return; }
+    if (error) { msg(erroreControllo(error) ? T.ts_errore : T.credenziali, 'err'); return; }
+    mostra('attesa');
     carica();
   });
 
@@ -714,29 +892,42 @@ body.deck #pannelloAccessi{display:none}
       const { error: e1 } = await sb.auth.verifyOtp({ token_hash: codice, type: tipoCodice });
       if (e1) {
         $('accPw1').value = ''; $('accPw2').value = '';
-        $('accNuova').hidden = true;
-        $('accForm').hidden = false;
-        $('accDimenticata').hidden = false;
+        mostra('login');
         msg(T.link_scaduto, 'err');
         return;
       }
       codiceUsato = true;
     }
-    const { error } = await sb.auth.updateUser({ password: p1 });
-    if (error) { msg(error.message, 'err'); return; }
     $('accPw1').value = ''; $('accPw2').value = '';
-    $('accNuova').hidden = true;
-    history.replaceState(null, '', location.pathname);
-    carica();
+    const salvaPassword = async () => {
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      if (error) { msg(error.message, 'err'); mostra('nuova'); return; }
+      history.replaceState(null, '', location.pathname);
+      mostra('attesa');
+      carica();
+    };
+    // con l'app già collegata, Supabase vuole il codice prima di cambiare la password
+    const { data: l } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (l && l.nextLevel === 'aal2' && l.currentLevel !== 'aal2') {
+      dopoCodice = salvaPassword;
+      chiediCodice('mfa_richiesto');
+      return;
+    }
+    salvaPassword();
   });
 
   $('accDimenticata').addEventListener('click', async () => {
     const email = $('accEmail').value.trim();
     if (!email) { msg(T.serve_email, 'err'); return; }
+    msg(T.verifico);
+    let esito = {};
     try {
-      await sb.auth.resetPasswordForEmail(email,
-        { redirectTo: location.origin + location.pathname });
+      const captchaToken = await gettone();
+      esito = await sb.auth.resetPasswordForEmail(email,
+        { redirectTo: location.origin + location.pathname, captchaToken });
     } catch (e) {}
+    nuovoGettone();
+    if (erroreControllo(esito && esito.error)) { msg(T.ts_errore, 'err'); return; }
     // stesso messaggio che l'indirizzo esista o no: non si rivela chi è abilitato
     msg(T.inviata, 'ok');
   });
@@ -744,22 +935,13 @@ body.deck #pannelloAccessi{display:none}
   $('accEsci').addEventListener('click', esci);
 
   (async () => {
-    if (erroreLink) msg(T.link_scaduto, 'err');
-    if (codice) {
-      $('accForm').hidden = true;
-      $('accDimenticata').hidden = true;
-      $('accNuova').hidden = false;
-      return;
-    }
+    if (codice) { mostra('nuova'); return; }
     const { data } = await sb.auth.getSession();
     const session = data && data.session;
-    if (session && (tipoLink === 'invite' || tipoLink === 'recovery')) {
-      $('accForm').hidden = true;
-      $('accDimenticata').hidden = true;
-      $('accNuova').hidden = false;
-      return;
-    }
-    if (session) carica();
+    if (session && (tipoLink === 'invite' || tipoLink === 'recovery')) { mostra('nuova'); return; }
+    if (session) { mostra('attesa'); carica(); return; }
+    mostra('login');
+    if (erroreLink) msg(T.link_scaduto, 'err');
   })();
 })();
 
