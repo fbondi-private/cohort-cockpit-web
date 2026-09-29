@@ -729,8 +729,6 @@ body.deck #pannelloAccessi{display:none}
     if (a.amministratore && typeof montaPannelloAccessi === 'function') {
       montaPannelloAccessi(sb, IT);
     }
-    // il menu delle sezioni elenca solo quelle rimaste visibili (e il pannello Accessi)
-    if (typeof renderNav === 'function') renderNav();
   }
 
 
@@ -776,6 +774,9 @@ body.deck #pannelloAccessi{display:none}
       URL.revokeObjectURL(url);
       applicaAccesso(data.accesso);
       document.body.classList.remove('bloccato');
+      // il menu delle sezioni elenca solo quelle visibili: si calcola ora che la
+      // schermata di accesso non copre più la pagina e gli accessi sono applicati
+      if (typeof renderNav === 'function') renderNav();
       msg('');
     };
     s.onerror = () => msg(T.errore_rete, 'err');
