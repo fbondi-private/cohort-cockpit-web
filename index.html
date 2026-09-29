@@ -201,6 +201,21 @@ section{margin-top:44px}
 .cv-list li:last-child{margin-bottom:0}
 #covidIndTable td:first-child{white-space:normal; min-width:220px}
 @media (max-width:560px){#covidIndTable td:first-child{min-width:140px}}
+.kpis.k3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.kpis.k3{grid-template-columns:minmax(0,1fr)}}
+.fs-controls{display:flex; gap:12px 18px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px}
+.fs-controls .ctl select{min-width:190px}
+.fs-det{font-size:12.5px; color:var(--muted); display:flex; gap:6px; align-items:center}
+.fs-table td:first-child{white-space:normal; min-width:230px}
+.fs-table tr.fs-s td{font-weight:700; background:var(--surface-2)}
+.fs-table tr.fs-d td{font-size:12px; color:var(--muted)}
+.fs-table tr.fs-d td:first-child{padding-left:26px}
+.fs-table tr.fs-p td{font-size:12px; color:var(--muted); font-style:italic}
+.fs-table tr.fs-i td:first-child{padding-left:26px; font-style:italic}
+.fs-table .fs-sep{border-left:1px solid var(--line)}
+.fs-table th.fs-bud, .fs-table td.fs-bud{background:var(--warn-soft)}
+.fs-table td.neg{color:var(--neg)}
+@media (max-width:560px){.fs-table td:first-child{min-width:150px}}
 @media (max-width:560px){
   .cv-row{grid-template-columns:minmax(0,1fr) 3.2em}
   .cv-row > div:first-child{grid-column:1 / -1}
@@ -557,6 +572,8 @@ body.deck #pannelloAccessi{display:none}
     // la scheda arriva solo nella versione completa del codice, che il database
     // consegna ad amministratori e a chi ha questa sezione
     riserve: () => $('qualityList') && $('qualityList').closest('.card'),
+    // i conti economici: il database li manda solo a chi ha questa sezione
+    bilanci: () => $('fsSection'),
   };
 
   function applicaAccesso(a) {
