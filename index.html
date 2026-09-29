@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>Eventboost Cockpit</title>
+<title>Management and Investor Cockpit</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <style>
@@ -414,6 +414,8 @@ body:not(.bloccato) #accesso{display:none}
 .acc-box{width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line);
   border-radius:var(--r); box-shadow:var(--shadow); padding:28px 28px 24px; margin-inline:16px}
 .acc-box h1{font-size:24px; margin-bottom:4px}
+.acc-logo{display:block; height:64px; width:auto; background:#fff; border:1px solid var(--line);
+  border-radius:10px; padding:5px 7px; margin:0 0 16px}
 .acc-sub{color:var(--muted); font-size:13px; margin:0 0 18px}
 .acc-box label{display:block; font-size:12px; color:var(--muted); margin:12px 0 4px}
 .acc-box input{width:100%; font:inherit; font-size:14px; padding:9px 11px;
@@ -452,7 +454,9 @@ body.deck #pannelloAccessi{display:none}
 <body class="bloccato">
 <div id="accesso">
   <div class="acc-box">
-    <h1>Eventboost Cockpit</h1>
+    <!-- decorativo: il nome è nel titolo qui sotto -->
+    <img class="acc-logo" src="logo-eb-sl.png" width="104" height="64" alt="">
+    <h1>Management and Investor Cockpit</h1>
     <p class="acc-sub" data-t="sub">Accesso riservato</p>
     <form id="accForm" autocomplete="on">
       <label for="accEmail" data-t="email">Email</label>
