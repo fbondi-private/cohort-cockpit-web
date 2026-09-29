@@ -111,6 +111,24 @@ h1{font-size:28px; letter-spacing:-.015em}
 .btn:focus-visible,.seg button:focus-visible,input:focus-visible,select:focus-visible,
 [tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 .spacer{flex:1}
+.secnav{position:sticky; top:var(--ctl-h, 0px); z-index:19; background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.secnav[hidden]{display:none}
+.secnav .wrap{padding-top:0; padding-bottom:0; display:flex; align-items:stretch}
+.secnav-list{flex:1 1 auto; min-width:0; display:flex; overflow-x:auto; scrollbar-width:none;
+  margin:0 -7px}
+.secnav-list::-webkit-scrollbar{display:none}
+.secnav-arr{display:none; flex:none; width:26px; border:0; padding:0; background:none;
+  color:var(--muted); font:inherit; font-size:18px; line-height:1; cursor:pointer}
+.secnav-arr:hover{color:var(--ink)}
+.secnav.scorre .secnav-arr{display:block}
+.secnav.scorre.inizio .secnav-arr[data-dir="-1"], .secnav.scorre.fine .secnav-arr[data-dir="1"]{visibility:hidden}
+.secnav a{flex:none; padding:8px 7px 6px; font-size:12.5px; color:var(--muted);
+  text-decoration:none; white-space:nowrap; border-bottom:2px solid transparent}
+.secnav a:hover{color:var(--ink)}
+.secnav a[aria-current]{color:var(--accent-ink); border-bottom-color:var(--accent)}
+.secnav a:focus-visible{outline:2px solid var(--accent); outline-offset:-2px; border-radius:4px}
+section{scroll-margin-top:calc(var(--stick-h, 0px) + 16px)}
 section{margin-top:44px}
 .shead{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
   padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:20px}
@@ -342,7 +360,7 @@ code{font-family:var(--mono); font-size:.9em; background:var(--surface-2);
 .chips label input{margin:0}
 .chips label.on{background:var(--accent-soft); border-color:var(--accent);
   color:var(--accent-ink); font-weight:600}
-body.deck .masthead, body.deck .controls, body.deck #deckPanel,
+body.deck .masthead, body.deck .controls, body.deck .secnav, body.deck #deckPanel,
 body.deck #importPanel, body.deck .footer, body.deck > .wrap{display:none}
 #deckStage{display:none}
 body.deck #deckStage{display:block; margin:0 auto; padding:18px 24px 60px;
@@ -389,7 +407,7 @@ body.deck .deckbar{display:flex}
 @media print{
   @page{size:297mm 167mm; margin:0}
   html, body{background:#fff; margin:0; padding:0}
-  .deckbar,.masthead,.controls,#deckPanel,#importPanel,.footer{display:none!important}
+  .deckbar,.masthead,.controls,.secnav,#deckPanel,#importPanel,.footer{display:none!important}
   body.deck > .wrap{display:none!important}
   body.deck #deckStage{padding:0; margin:0; overflow:visible}
   body.deck section.slide{break-after:page; page-break-after:always;
@@ -711,6 +729,8 @@ body.deck #pannelloAccessi{display:none}
     if (a.amministratore && typeof montaPannelloAccessi === 'function') {
       montaPannelloAccessi(sb, IT);
     }
+    // il menu delle sezioni elenca solo quelle rimaste visibili (e il pannello Accessi)
+    if (typeof renderNav === 'function') renderNav();
   }
 
 
