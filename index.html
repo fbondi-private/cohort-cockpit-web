@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -457,26 +457,26 @@ body.deck #pannelloAccessi{display:none}
     <!-- decorativo: il nome è nel titolo qui sotto -->
     <img class="acc-logo" src="logo-eb-sl.png" width="104" height="64" alt="">
     <h1>Management and Investor Cockpit</h1>
-    <p class="acc-sub" data-t="sub">Accesso riservato</p>
+    <p class="acc-sub" data-t="sub">Restricted access</p>
     <form id="accForm" autocomplete="on">
       <label for="accEmail" data-t="email">Email</label>
       <input id="accEmail" type="email" autocomplete="username" required>
       <label for="accPw" data-t="password">Password</label>
       <input id="accPw" type="password" autocomplete="current-password" required>
-      <button class="btn primary" id="accEntra" type="submit" data-t="entra">Accedi</button>
+      <button class="btn primary" id="accEntra" type="submit" data-t="entra">Sign in</button>
     </form>
     <form id="accNuova" hidden>
-      <p class="acc-sub" data-t="nuova_h">Scegli la tua password</p>
-      <label for="accPw1" data-t="nuova">Nuova password (almeno 10 caratteri)</label>
+      <p class="acc-sub" data-t="nuova_h">Choose your password</p>
+      <label for="accPw1" data-t="nuova">New password (at least 10 characters)</label>
       <input id="accPw1" type="password" autocomplete="new-password" minlength="10" required>
-      <label for="accPw2" data-t="ripeti">Ripeti la password</label>
+      <label for="accPw2" data-t="ripeti">Repeat the password</label>
       <input id="accPw2" type="password" autocomplete="new-password" minlength="10" required>
-      <button class="btn primary" type="submit" data-t="salva">Salva e continua</button>
+      <button class="btn primary" type="submit" data-t="salva">Save and continue</button>
     </form>
-    <button class="acc-link" id="accDimenticata" type="button" data-t="dimenticata">Password dimenticata?</button>
-    <button class="acc-link" id="accEsci" type="button" hidden data-t="esci">Esci</button>
+    <button class="acc-link" id="accDimenticata" type="button" data-t="dimenticata">Forgot your password?</button>
+    <button class="acc-link" id="accEsci" type="button" hidden data-t="esci">Sign out</button>
     <p class="acc-msg" id="accMsg" role="status" aria-live="polite"></p>
-    <p class="acc-foot" data-t="foot">Accesso personale e registrato. I dati sono riservati.</p>
+    <p class="acc-foot" data-t="foot">Personal, logged access. The data is confidential.</p>
   </div>
 </div>
 
@@ -491,8 +491,10 @@ body.deck #pannelloAccessi{display:none}
   const URL_SB = 'https://hnndwoigwaigqnlrwstv.supabase.co';
   const KEY = 'sb_publishable_y8IqWK-k0DSL1TT1snGUXw_6wLwC_Cw';     // chiave pubblica: da sola non apre nulla
 
+  // il pannello Accessi segue la lingua del browser di chi amministra
   const IT = /^it\b/i.test(navigator.language || 'it');
-  const T = IT ? {
+  const TXT = {
+    it: {
     sub: 'Accesso riservato', email: 'Email', password: 'Password', entra: 'Accedi',
     nuova_h: 'Scegli la tua password', nuova: 'Nuova password (almeno 10 caratteri)',
     ripeti: 'Ripeti la password', salva: 'Salva e continua',
@@ -512,7 +514,8 @@ body.deck #pannelloAccessi{display:none}
     motivo_nessun_dato: 'I dati non sono ancora disponibili.',
     motivo_non_autenticato: 'Sessione scaduta: accedi di nuovo.',
     scade: d => `Accesso fino al ${d}`,
-  } : {
+    },
+    en: {
     sub: 'Restricted access', email: 'Email', password: 'Password', entra: 'Sign in',
     nuova_h: 'Choose your password', nuova: 'New password (at least 10 characters)',
     ripeti: 'Repeat the password', salva: 'Save and continue',
@@ -532,13 +535,16 @@ body.deck #pannelloAccessi{display:none}
     motivo_nessun_dato: 'The data is not available yet.',
     motivo_non_autenticato: 'Session expired: sign in again.',
     scade: d => `Access until ${d}`,
+    },
   };
+  // la schermata di accesso è sempre in inglese, qualunque sia la lingua del browser
+  const T = TXT.en;
 
   const $ = id => document.getElementById(id);
   document.querySelectorAll('#accesso [data-t]').forEach(el => {
     if (T[el.dataset.t]) el.textContent = T[el.dataset.t];
   });
-  document.documentElement.lang = IT ? 'it' : 'en';
+  document.documentElement.lang = 'en';
   const msg = (text, kind) => {
     const m = $('accMsg');
     m.textContent = text || '';
@@ -586,6 +592,8 @@ body.deck #pannelloAccessi{display:none}
   };
 
   function applicaAccesso(a) {
+    // dentro il cockpit la targhetta parla la lingua scelta lì (LANG è del cruscotto)
+    const TL = TXT[typeof LANG !== 'undefined' && LANG === 'it' ? 'it' : 'en'];
     const tutte = Object.keys(SEZIONI).concat(['export']);
     const vede = new Set(a.amministratore ? tutte : (a.sezioni || []));
     Object.entries(SEZIONI).forEach(([k, el]) => {
@@ -622,14 +630,14 @@ body.deck #pannelloAccessi{display:none}
     chi.appendChild(nome);
     if (a.scade_il) {
       const s = document.createElement('span');
-      s.textContent = T.scade(new Date(a.scade_il).toLocaleDateString(IT ? 'it-IT' : 'en-GB'));
+      s.textContent = TL.scade(new Date(a.scade_il).toLocaleDateString(TL === TXT.it ? 'it-IT' : 'en-GB'));
       chi.appendChild(s);
     }
     box.appendChild(chi);
     const esciBtn = document.createElement('button');
     esciBtn.className = 'btn';
     esciBtn.type = 'button';
-    esciBtn.textContent = T.esci;
+    esciBtn.textContent = TL.esci;
     esciBtn.addEventListener('click', esci);
     box.appendChild(esciBtn);
     // in alto a destra, sopra gli strumenti e la fonte dati
